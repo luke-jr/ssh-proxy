@@ -1,0 +1,17 @@
+== Proxy Setup ==
+
+ssh-keygen -f ssh-proxy-host-rsa.key -N ''
+
+
+== Proxy Start ==
+
+./ssh-proxy.py
+
+== Servers ==
+
+SSH_AUTH_SOCK= ssh friendlyhostname@proxyserver -p 2200 -R 22:localhost:22 -o StrictHostKeyChecking=no -i /etc/ssh/ssh_host_ecdsa_key -N
+
+== Clients ==
+
+ssh client@proxyserver -p 2200 ls
+ssh -o ProxyCommand='ssh client@proxyserver -p 2200 %h' 'aa:bb:cc:dd:ee:ff:00:11:22:33:44:55:66:77:88:99'
