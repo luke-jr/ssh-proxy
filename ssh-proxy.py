@@ -51,6 +51,8 @@ userparse = (a2b_hexcolon, binascii.a2b_hex, binascii.a2b_base64)
 class relay_feed_hack:
 	def __init__(self, channel):
 		self.channel = channel
+		self._sending = b''
+		self._feedlock = threading.Lock()
 	
 	def _close(self):
 		self.channel.close()
@@ -60,12 +62,24 @@ class relay_feed_hack:
 		logger.info('%s: Closed by %s' % (self.channel.linkinfo, self.channel.remaddr))
 		threading.Thread(target=self._close).start()
 	
+	def _feed(self):
+		while True:
+			try:
+				sent = self.channel.otherend.send(self._sending)
+			except:
+				logger.error('%s: Error sending to %s' % (self.channel.linkinfo, self.channel.otherend.remaddr))
+				threading.Thread(target=self._close).start()
+			with self._feedlock:
+				self._sending = self._sending[sent:]
+				if len(self._sending) == 0:
+					break
+	
 	def feed(self, data):
-		try:
-			self.channel.otherend.sendall(data)
-		except:
-			logger.error('%s: Error sending to %s' % (self.channel.linkinfo, self.channel.otherend.remaddr))
-			threading.Thread(target=self._close).start()
+		with self._feedlock:
+			already_have_data = len(self._sending)
+			self._sending += data
+		if not already_have_data:
+			threading.Thread(target=self._feed).start()
 
 def sendList(channel):
 	for (rhkfp, rh) in remhosts.items():
