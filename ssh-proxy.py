@@ -150,7 +150,7 @@ class Server(paramiko.ServerInterface):
 		fwd_src = self.remaddr[:2]
 		try:
 			dstchannel = dst.t.open_forwarded_tcpip_channel(fwd_src, dst.fwd_dest)
-		except SSHException:
+		except paramiko.SSHException:
 			return False
 		linkinfo = '0x%x' % (id(channel),)
 		pair_link(channel, dstchannel, linkinfo, self, dst)
